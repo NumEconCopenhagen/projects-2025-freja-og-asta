@@ -1,9 +1,8 @@
-# [Group name]
+# freja-og-asta
 
 **Group members:**
-- A
-- B
-- C
+- tpn381
+- cnh349
 
 **This repository contains:***
 
