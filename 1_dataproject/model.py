@@ -59,6 +59,7 @@ unemployment_over_time = []
 ages = []
 
 # Life-cycle simulation:
+
 for age in range(18, 65):
 
     # Education status
@@ -165,13 +166,30 @@ print(
     u_ss
 )
 
-# Check selected ages
-for age in [25, 35, 45, 55, 60]:
-    age_index = ages.index(age)
-    print(
-        f"Age {age}: simulated unemployment rate = "
-        f"{unemployment_rate[age_index]:.4f}"
-    )
+# Check visually that the unemployment rate converges to the theoretical steady-state value
+plt.figure(figsize=(10, 6))
+
+plt.plot(
+    ages,
+    unemployment_rate,
+    label="Simulated unemployment rate"
+)
+
+plt.axhline(
+    u_ss,
+    color="red",
+    linestyle="--",
+    label="Theoretical steady-state"
+)
+
+plt.xlabel("Age")
+plt.ylabel("Unemployment rate")
+plt.title("Unemployment Rate over the Life Cycle")
+
+plt.legend()
+plt.grid(True)
+
+plt.show()
 
 # Mean and percentiles
 income_over_time = np.array(income_over_time)
@@ -181,7 +199,6 @@ p25 = np.percentile(income_over_time, 25, axis=1)
 p50 = np.percentile(income_over_time, 50, axis=1)
 p75 = np.percentile(income_over_time, 75, axis=1)
 p90 = np.percentile(income_over_time, 90, axis=1)
-
 
 # Plot
 plt.figure(figsize=(10, 6))
