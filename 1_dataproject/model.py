@@ -2,12 +2,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 # Model parameters
 N = 50000
 e = ['short', 'medium', 'long']
 p_e = [0.4, 0.35, 0.25]
 S = {'short': 1, 'medium': 3, 'long': 5}
-h_e0 = [1, 1.2, 1.55]
+h_e0 = {1, 1.2, 1.55}
 delta_e = {
     'short': 0.01,
     'medium': 0.02,
@@ -30,16 +31,16 @@ psi = np.exp(rng.normal(-0.5*sigma_psi**2, sigma_psi, size=N))
 print(psi.mean())
 
 # Assigning an education to all individuals using the defined probabilities
-education = rng.choice(
-    e,
-    size=N,
-    p=p_e
-)
+education = rng.choice(e, size=N, p=p_e)
 
 # Checking that the share of individuals with each level of education is close to the defined probabilities
-print("Short:", np.mean(education == 'short'))
-print("Medium:", np.mean(education == 'medium'))
-print("Long:", np.mean(education == 'long'))
+short_share = np.mean(education == 'short')
+medium_share = np.mean(education == 'medium')
+long_share = np.mean(education == 'long')
+
+print("Short:", short_share)
+print("Medium:", medium_share)
+print("Long:", long_share)
 
 # Assigning education specific initial human capital
 h_e0 = {'short': 1, 'medium': 1.2, 'long': 1.55}
@@ -59,21 +60,14 @@ unemployment_over_time = []
 ages = []
 
 # Life-cycle simulation:
-
 for age in range(18, 65):
-
     # Education status
     in_education = np.zeros(N, dtype=bool)
-
     for x in e:
         in_education[education == x] = age < 18 + S[x]
 
     # Labour market transitions
     unemployed = ~employed & ~in_education
-
-    unemployment_over_time.append(
-    unemployed.copy()
-)
 
     # Generates a random number for each indiviudal and checks if it is less than the job finding probability
     job_finding = rng.random(N) < lambda1
@@ -83,21 +77,18 @@ for age in range(18, 65):
     job_separation = rng.random(N) < sigma
     employed[employed & job_separation] = False
 
+    unemployed = ~employed & ~in_education
+    
+    unemployment_over_time.append(unemployed.copy())
+    
     # Human capital shock
-    psi = np.exp(
-        rng.normal(
-            -0.5 * sigma_psi**2,
-            sigma_psi,
-            size=N
-        )
-    )
+    psi = np.exp(rng.normal(-0.5 * sigma_psi**2, sigma_psi, size=N))
 
     # Human capital
     h_old = h.copy()
 
     # Incorporates the equations from the exercise
     for x in e:
-
         employed_group = (
             (education == x)
             & employed
@@ -124,72 +115,41 @@ for age in range(18, 65):
 
     # Income
     y = np.zeros(N)
-
     y[in_education] = y_SU
 
-    y[employed & ~in_education] = (
-        h[employed & ~in_education]
-    )
+    y[employed & ~in_education] = (h[employed & ~in_education])
 
     unemployed = ~employed & ~in_education
 
-    y[unemployed] = np.maximum(
-        rho * previous_income[unemployed],
-        y_subscribt
-    )
+    y[unemployed] = np.maximum(rho * previous_income[unemployed], y_subscribt)
 
     # Save previous income
-    previous_income[employed & ~in_education] = (
-        y[employed & ~in_education]
-    )
+    previous_income[employed & ~in_education] = (y[employed & ~in_education])
 
     # Save income for this age
     income_over_time.append(y.copy())
     ages.append(age)
 
-#Unemployment in Steady State
-# Convert unemployment data to numpy array
-unemployment_over_time = np.array(
-    unemployment_over_time
-)
+# Unemployment in steady state / Convert unemployment data to numpy array
+unemployment_over_time = np.array(unemployment_over_time)
 
 # Calculate simulated unemployment rate by age
-unemployment_rate = np.mean(
-    unemployment_over_time,
-    axis=1
-)
+unemployment_rate = np.mean(unemployment_over_time, axis=1)
 
-# Theoretical steady-state unemployment rate
+ # Theoretical steady-state unemployment rate
 u_ss = sigma / (sigma + lambda1)
-print(
-    "Theoretical steady-state unemployment rate:",
-    u_ss
-)
+print("Theoretical steady-state unemployment rate:", u_ss)
 
 # Check visually that the unemployment rate converges to the theoretical steady-state value
-plt.figure(figsize=(10, 6))
-
-plt.plot(
-    ages,
-    unemployment_rate,
-    label="Simulated unemployment rate"
-)
-
-plt.axhline(
-    u_ss,
-    color="red",
-    linestyle="--",
-    label="Theoretical steady-state"
-)
-
-plt.xlabel("Age")
-plt.ylabel("Unemployment rate")
-plt.title("Unemployment Rate over the Life Cycle")
-
-plt.legend()
-plt.grid(True)
-
-plt.show()
+def plot_unemployment():
+    plt.figure(figsize=(10, 6))
+    plt.plot(ages, unemployment_rate, label="Simulated unemployment rate")
+    plt.axhline(u_ss, color="red", linestyle="--", label="Theoretical steady-state")
+    plt.xlabel("Age")
+    plt.ylabel("Unemployment rate")
+    plt.title("Unemployment Rate over the Life Cycle")
+    plt.legend()
+    plt.grid(True)
 
 # Mean and percentiles
 income_over_time = np.array(income_over_time)
@@ -201,62 +161,49 @@ p75 = np.percentile(income_over_time, 75, axis=1)
 p90 = np.percentile(income_over_time, 90, axis=1)
 
 # Plot
-plt.figure(figsize=(10, 6))
-plt.plot(ages, mean_income, label="Mean")
-plt.plot(ages, p10, label="P10")
-plt.plot(ages, p25, label="P25")
-plt.plot(ages, p50, label="P50")
-plt.plot(ages, p75, label="P75")
-plt.plot(ages, p90, label="P90")
-
-plt.xlabel("Age")
-plt.ylabel("Income")
-plt.title("Income over the life cycle")
-
-plt.legend()
-plt.grid(True)
+def plot_income_distribution():
+    plt.figure(figsize=(10, 6))
+    plt.plot(ages, mean_income, label="Mean")
+    plt.plot(ages, p10, label="P10")
+    plt.plot(ages, p25, label="P25")
+    plt.plot(ages, p50, label="P50")
+    plt.plot(ages, p75, label="P75")
+    plt.plot(ages, p90, label="P90")
+    plt.xlabel("Age")
+    plt.ylabel("Income")
+    plt.title("Income over the life cycle")
+    plt.legend()
+    plt.grid(True)
 
 plt.show()
 
-
 # Histograms of income distribution at selected ages
+def plot_income_histograms():
 selected_ages = [25, 35, 45, 60]
 plt.figure(figsize=(12, 8))
 for i, age in enumerate(selected_ages):
-
     age_index = ages.index(age)
-
     income_at_age = income_over_time[age_index]
-
     plt.subplot(2, 2, i + 1)
-
     plt.hist(
         income_at_age,
         bins=50,
         edgecolor="black"
     )
-
     plt.xlabel("Income")
     plt.ylabel("Number of individuals")
     plt.title(f"Income distribution at age {age}")
-
     plt.grid(True, alpha=0.3)
-
-plt.tight_layout()
+    plt.tight_layout()
+    
 plt.show()
 
 # Gini coefficient
-
 def gini(incomes):
-
     incomes = np.asarray(incomes)
-
     incomes = np.sort(incomes)
-
     n = len(incomes)
-
     index = np.arange(1, n + 1)
-
     return (
         (2 * np.sum(index * incomes))
         / (n * np.sum(incomes))
