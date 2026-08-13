@@ -175,28 +175,24 @@ def plot_income_distribution():
     plt.legend()
     plt.grid(True)
 
-plt.show()
-
 # Histograms of income distribution at selected ages
-def plot_income_histograms():
 selected_ages = [25, 35, 45, 60]
-plt.figure(figsize=(12, 8))
-for i, age in enumerate(selected_ages):
-    age_index = ages.index(age)
-    income_at_age = income_over_time[age_index]
-    plt.subplot(2, 2, i + 1)
-    plt.hist(
-        income_at_age,
-        bins=50,
-        edgecolor="black"
-    )
-    plt.xlabel("Income")
-    plt.ylabel("Number of individuals")
-    plt.title(f"Income distribution at age {age}")
-    plt.grid(True, alpha=0.3)
+def plot_income_histograms():
+    plt.figure(figsize=(12, 8))
+    for i, age in enumerate(selected_ages):
+        age_index = ages.index(age)
+        income_at_age = income_over_time[age_index]
+        plt.subplot(2, 2, i + 1)
+        plt.hist(
+            income_at_age,
+            bins=50,
+            edgecolor="black"
+        )
+        plt.xlabel("Income")
+        plt.ylabel("Number of individuals")
+        plt.title(f"Income distribution at age {age}")
+        plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    
-plt.show()
 
 # Gini coefficient
 def gini(incomes):
@@ -204,14 +200,9 @@ def gini(incomes):
     incomes = np.sort(incomes)
     n = len(incomes)
     index = np.arange(1, n + 1)
-    return (
-        (2 * np.sum(index * incomes))
-        / (n * np.sum(incomes))
-        - (n + 1) / n
-    )
+    return ((2 * np.sum(index * incomes)) / (n * np.sum(incomes)) - (n + 1) / n)
 
 # Test: uniform distribution on [0,1]
-
 uniform_test = np.linspace(0, 1, 100000)
 
 print("Gini uniform:", gini(uniform_test))
@@ -219,10 +210,10 @@ print("Gini uniform:", gini(uniform_test))
 # Gini for full simulated sample
 
 full_sample = income_over_time.flatten()
-
 gini_full = gini(full_sample)
 
-print("Gini coefficient, full sample:", gini_full)
+def print_gini():
+    print("Gini coefficient, full sample:", gini_full)
 
 # Lorenz curve
 
