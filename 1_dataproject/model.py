@@ -399,7 +399,7 @@ def simulate_illness_model(include_illness=True):
         employed_group = employed & ~in_education
         unemployed_group = ~employed & ~in_education
 
-        # Severe illness
+        # Severe illness is randomly assigned
         if include_illness:
             illness_probability = 0.001 * np.exp(0.09 * (age - 18))
             illness = rng.random(N) < illness_probability
