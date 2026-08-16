@@ -61,17 +61,16 @@ ages = []
 # --------------------------------------- LIFE CYCLE SIMULATION: --------------------------------------- #
 for age in range(18, 65):
 
-    # Education status
-    in_education = np.array([
-    age < 18 + S[x] for x in education])
+    # Assigning education status
+    in_education = np.array([age < 18 + S[x] for x in education])
 
     # Defining unemployed as neither employed or in education
     unemployed = ~employed & ~in_education
 
-    # Job finding
+    # Assigning employment status each period
     employed[unemployed & (rng.random(N) < lambda1)] = True
 
-    # Job separation
+    # Assigning unemployment status each period
     employed[employed & (rng.random(N) < sigma)] = False
 
     # Redefining unemployed as neither employed or in education as changes was made for employed
@@ -87,11 +86,11 @@ for age in range(18, 65):
     employed_group = employed & ~in_education
     unemployed_group = ~employed & ~in_education
 
-    # Incorporates the equations from the exercise
+    # Incorporates the equations of the evolution of human capital from the exercise
     h[employed_group] = (h_old[employed_group] * (1 + delta_growth[employed_group]) * psi[employed_group])
     h[unemployed_group] = (h_old[unemployed_group] * (1 - delta) * psi[unemployed_group])
 
-  # Income
+    # Income depending on employment and education
     y = np.zeros(N)
     y[in_education] = y_SU
     y[employed] = h[employed]
@@ -179,7 +178,7 @@ def gini(incomes):
     index = np.arange(1, n + 1)
     return (2 * np.sum(index * incomes)) / (n * np.sum(incomes)) - (n + 1) / n
 
-# Test Gini calculation
+# Testing the Gini calculation
 def gini_uniform_test():
     test = np.linspace(0, 1, 100000)
     print("Gini uniform:", gini(test))
@@ -188,6 +187,7 @@ def gini_uniform_test():
 def gini_full_sample():
     return gini(income_over_time.flatten())
 
+#Printing the Gini coefficient
 def print_gini():
     print("Gini coefficient, full sample:", gini_full_sample())
 
@@ -221,20 +221,10 @@ def plot_lorenz_curve():
     plt.grid(True)
     plt.show()
 
-# Plot Gini over the life cycle
-def plot_gini_by_age():
-    gini_values = gini_by_age()
-    plt.figure(figsize=(5, 3))
-    plt.plot(ages, gini_values, marker="o")
-    plt.xlabel("Age")
-    plt.ylabel("Gini coefficient")
-    plt.title("Income Inequality over the Life Cycle")
-    plt.grid(True)
-
 # ------------------------------------------------------------------------------------------------------- #
 # ------------------------------------- 2.4 WHAT DRIVES INEQUALITY? ------------------------------------- #
 
-# Alternative simulations
+# Create four additional simulation
 def simulate_model(
     education_differences=True,
     human_capital_shocks=True,
@@ -249,35 +239,38 @@ def simulate_model(
         education = np.full(N, "medium")
         delta_growth = np.full(N, delta_e["medium"])
 
-    # Initial human capital
+    # Assigning initial human capital
     h = np.array([h_e0[x] for x in education])
 
+    # We define that every agent is unemployed when they are 18.
     employed = np.zeros(N, dtype=bool)
+
+    # Next we define that everyones previous income is equal to zero at age 18.
     previous_income = np.zeros(N)
 
+    # Creating a list to use when eleminating unemployment from the model.
     if not unemployment:
         employed[:] = True
 
+    # Creates empty lists to store income the simulation.
     income_over_time = []
 
     # --------------------------------------- ALTERNATIVE SIMULATIONS --------------------------------------- #
     for age in range(18, 65):
 
-        # Education status
-        in_education = np.array([
-            age < 18 + S[x] for x in education
-        ])
+        # Assigning education status
+        in_education = np.array([age < 18 + S[x] for x in education])
 
-        # Labour market transitions
+        # Defining unemployed as neither employed or in education
         if unemployment:
             unemployed = ~employed & ~in_education
 
-            # Job finding
+            # Assigning employment status each period
             employed[unemployed & (rng.random(N) < lambda1)] = True
 
-            # Job separation
+            # Assigning unemployment status each period
             employed[employed & (rng.random(N) < sigma)] = False
-
+            # Eliminating unemployment from the model
         else:
             employed[:] = ~in_education
 
@@ -285,30 +278,29 @@ def simulate_model(
         employed_group = employed & ~in_education
         unemployed_group = ~employed & ~in_education
 
-        # Human capital shock
+        # Adding the human capital shock
         if human_capital_shocks:
-            psi = np.exp(rng.normal(-0.5 * sigma_psi**2, sigma_psi, N)
-            )
+            psi = np.exp(rng.normal(-0.5 * sigma_psi**2, sigma_psi, N))
         else:
             psi = np.ones(N)
 
         # Save human capital before updating
         h_old = h.copy()
 
-        # Human capital evolution
-        h[employed_group] = (h_old[employed_group] * (1 + delta_growth[employed_group]) * psi[employed_group])
-
+        # Adding depreciation equal to zero when simulating without depreciation
         depreciation = delta if unemployment_depreciation else 0
 
+        # Incorporates the equations of the evolution of human capital from the exercise
+        h[employed_group] = (h_old[employed_group] * (1 + delta_growth[employed_group]) * psi[employed_group])
         h[unemployed_group] = (h_old[unemployed_group] * (1 - depreciation) * psi[unemployed_group])
 
-        # Income
+        # Income depending on employment and education
         y = np.zeros(N)
         y[in_education] = y_SU
         y[employed] = h[employed]
 
-        if unemployment:
-            y[unemployed_group] = np.maximum(rho * previous_income[unemployed_group], y_subscribt)
+        # If unemployment is a part of the model, the income is as fraction of the previous income.
+        if unemployment: y[unemployed_group] = np.maximum(rho * previous_income[unemployed_group], y_subscribt)
 
         # Save previous income
         previous_income[employed] = y[employed]
@@ -320,18 +312,17 @@ def simulate_model(
 
 # ------------------------------------------------------------------------------------------------------- #
 # ------------------------------------------------------------------------------------------------------- #
-def run_inequality_experiments():
-
+def run_alternative_simulations():
+    # Defining the different models
     models = {
         "Baseline": {},
         "No education differences": {"education_differences": False},
         "No human capital shocks": {"human_capital_shocks": False},
         "No unemployment depreciation": {"unemployment_depreciation": False},
-        "No unemployment": {"unemployment": False}
-    }
-
+        "No unemployment": {"unemployment": False}}
     results = {}
 
+    #Running the different models
     for name, options in models.items():
         income = simulate_model(**options)
         results[name] = {
@@ -339,95 +330,96 @@ def run_inequality_experiments():
             "Age 50": gini(income[ages.index(50)])
         }
 
+    #Calculating the Gini coefficients
     print("Gini coefficients")
-    print(f"{'Model':30} {'Pooled':>10} {'Age 50':>10}")
-
     for name, values in results.items():
         print(
-            f"{name:30} "
-            f"{values['Pooled']:10.4f} "
-            f"{values['Age 50']:10.4f}"
-        )
+            f"{name}: "
+            f"Pooled = {values['Pooled']:.4f}, "
+            f"Age 50 = {values['Age 50']:.4f}")
 
+    #Comparing the Gini coefficients from the other models with the one from the baseline model
     baseline = results["Baseline"]["Pooled"]
-
-    print("\nReduction in pooled Gini relative to baseline")
+    print("\nDifference in pooled Gini relative to baseline")
 
     for name, values in results.items():
         if name != "Baseline":
-            print(f"{name:30} {baseline - values['Pooled']:.4f}")
+            difference = baseline - values["Pooled"]
+            print(f"{name}: {difference:.4f}")
 
     return results
 
 # ------------------------------------------------------------------------------------------------------ #
 # -------------------------------------- 2.5 EXTENSION: MORE RISK -------------------------------------- #
 
-# Simulation with age-dependent severe illness
+# Simulation with age-dependent probability of illness
 def simulate_illness_model(include_illness=True):
 
-    # Education
+    # Assigning an education to all individuals using the defined probabilities
     education = rng.choice(e, size=N, p=p_e)
+
+    #Assigns different income growth to the income depending on what education the agents have taken.
     delta_growth = np.array([delta_e[x] for x in education])
 
     # Initial human capital
     h = np.array([h_e0[x] for x in education])
 
-    # Labour market
+    # We define that every agent is unemployed when they are 18.
     employed = np.zeros(N, dtype=bool)
+
+    # Next we define that everyones previous income is equal to zero at age 18.
     previous_income = np.zeros(N)
 
+    # Creates empty lists to store income in the simulation.
     income_over_time = []
 
-    # Life-cycle simulation
-    for age in ages:
-
   # -------------------------------------- HEALTH SHOCK SIMULATIONS ------------------------------------- #
-        in_education = np.array([
-            age < 18 + S[x] for x in education
-        ])
+    for age in range(18, 65):
 
-        # Labour market transitions
+        # Assigning education status
+        in_education = np.array([age < 18 + S[x] for x in education])
+
+        # Defining unemployed as neither employed or in education
         unemployed = ~employed & ~in_education
 
-        # Job finding
+        # Assigning employment status each period
         employed[unemployed & (rng.random(N) < lambda1)] = True
 
-        # Job separation
+        # Assigning unemployment status each period
         employed[employed & (rng.random(N) < sigma)] = False
 
-        # Define employed and unemployed after labour market transitions
+        # Redefining unemployed as neither employed or in education as changes was made for employed
         employed_group = employed & ~in_education
         unemployed_group = ~employed & ~in_education
 
-        # Severe illness is randomly assigned
+        # Illness is randomly assigned
         if include_illness:
             illness_probability = 0.001 * np.exp(0.09 * (age - 18))
             illness = rng.random(N) < illness_probability
         else:
             illness = np.zeros(N, dtype=bool)
 
-        # Illness causes unemployment
+        # Illness causes unemployment for 1 period
         employed[illness] = False
 
-        # Update groups after illness
+        # Redefining unemployed as neither employed or in education as changes was made for employed
         employed_group = employed & ~in_education
         unemployed_group = ~employed & ~in_education
 
-        # Human capital shock
+        # Adding the human capital shock
         psi = np.exp(rng.normal(-0.5 * sigma_psi**2, sigma_psi, N))
 
-        # Save human capital before updating
+        # Saving the value of human capital at the beginning of each age as it is needed in the equation for the evolution of human capital
         h_old = h.copy()
 
-        # Human capital evolution
+        # Incorporates the equations of the evolution of human capital from the exercise
         h[employed_group] = (h_old[employed_group] * (1 + delta_growth[employed_group]) * psi[employed_group])
-
         h[unemployed_group] = (h_old[unemployed_group] * (1 - delta) * psi[unemployed_group])
 
-        # Illness reduces human capital
+        # Illness reduces human capital the period where the agent became ill
         h[illness] *= 0.90
 
-        # Income
+        # Income depending on employment and education
         y = np.zeros(N)
         y[in_education] = y_SU
         y[employed] = h[employed]
@@ -442,19 +434,22 @@ def simulate_illness_model(include_illness=True):
     return np.array(income_over_time)
 # ---------------------------------------------------------------------------------------------- #
 
-# Run the two models
+# Run the baseline model and the model including an illness probability
 income_baseline = simulate_illness_model(False)
 income_illness = simulate_illness_model(True)
 
-# Results
+# Calculates the mean income for every age group
 mean_baseline = income_baseline.mean(axis=1)
 mean_illness = income_illness.mean(axis=1)
 
+# Calculates the Gini coefficient for every age group
 gini_baseline_by_age = [gini(x) for x in income_baseline]
 gini_illness_by_age = [gini(x) for x in income_illness]
 
+# Calculates the age-dependant illness probability for every age group
 illness_probability_by_age = (0.001 * np.exp(0.09 * (np.array(ages) - 18)))
 
+#Plots the mean income for both models
 def plot_illness_income():
     plt.figure(figsize=(8, 4))
     plt.plot(ages, mean_baseline, label="Baseline")
@@ -466,6 +461,7 @@ def plot_illness_income():
     plt.grid(True)
     plt.show()
 
+#Plots the Gini coefficients for both models
 def plot_illness_gini():
     plt.figure(figsize=(8, 4))
     plt.plot(ages, gini_baseline_by_age, label="Baseline")
@@ -477,6 +473,7 @@ def plot_illness_gini():
     plt.grid(True)
     plt.show()
 
+#Plots the age-dependant illness probability
 def plot_illness_probability():
     plt.figure(figsize=(8, 4))
     plt.plot(ages, illness_probability_by_age * 100)
